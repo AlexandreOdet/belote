@@ -12,7 +12,8 @@ import SwiftData
 struct BeloteApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            BeloteMatch.self,
+            BeloteRound.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -26,6 +27,7 @@ struct BeloteApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(\.beloteDependencies, .live)
         }
         .modelContainer(sharedModelContainer)
     }

@@ -5,76 +5,51 @@
 //  Created by Alexandre Odet on 30/07/2026.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @AppStorage("defaultBeloteContractRaw") private var defaultBeloteContractRaw = BeloteSuit.hearts.rawValue
+    @State private var selectedMatch: BeloteMatch?
+    @State private var isShowingNewMatch = false
 
     var body: some View {
-        NavigationViewWrapper {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
-    }
-}
-
-fileprivate struct NavigationViewWrapper<Content: View>: View {
-    let content: () -> Content
-
-    var body: some View {
-#if os(macOS)
         NavigationSplitView {
-            content()
+            MatchListView(
+                selectedMatch: $selectedMatch,
+                defaultBeloteContractRaw: $defaultBeloteContractRaw,
+                onNewMatch: showNewMatch
+            )
         } detail: {
-            Text("Select an item")
+            if let selectedMatch {
+                MatchDetailView(match: selectedMatch, defaultGameMode: defaultGameMode)
+            } else {
+                ContentUnavailableView(
+                    "Sélectionne une partie",
+                    systemImage: "rectangle.grid.1x2",
+                    description: Text("Les scores et les manches apparaîtront ici.")
+                )
+            }
         }
-#else
-        content()
-#endif
+        .sheet(isPresented: $isShowingNewMatch) {
+            NewMatchView { match in
+                modelContext.insert(match)
+                selectedMatch = match
+            }
+        }
+    }
+
+    private var defaultGameMode: BeloteGameMode {
+        .standard(contract: BeloteSuit(rawValue: defaultBeloteContractRaw) ?? .hearts)
+    }
+
+    private func showNewMatch() {
+        isShowingNewMatch = true
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: [BeloteMatch.self, BeloteRound.self], inMemory: true)
 }
