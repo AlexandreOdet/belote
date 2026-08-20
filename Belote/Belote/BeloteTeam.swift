@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum BeloteTeam: Int, CaseIterable, Identifiable {
+enum BeloteTeam: Int, CaseIterable, Codable, Identifiable {
     case teamA
     case teamB
 
@@ -23,7 +23,7 @@ enum BeloteTeam: Int, CaseIterable, Identifiable {
     }
 }
 
-enum BelotePlayerSeat: Int, CaseIterable, Identifiable {
+enum BelotePlayerSeat: Int, CaseIterable, Codable, Identifiable {
     case teamAPlayerOne
     case teamBPlayerOne
     case teamAPlayerTwo

@@ -15,14 +15,7 @@ struct MatchDetailView: View {
     let defaultGameMode: BeloteGameMode
     @State private var isShowingNewRound = false
     @State private var isShowingCardReference = false
-    @State private var selectedTakingRound = TakingRoundOption.firstRound
-    @State private var selectedTakerSeat = BelotePlayerSeat.teamAPlayerOne
-    @State private var selectedDealTrump = BeloteSuit.hearts
-    @State private var initialDeal: BeloteInitialDeal?
-    @State private var completedDeal: BeloteCompletedDeal?
-    @State private var dealStatus: String?
-    @State private var playSession: BeloteRoundPlaySession?
-    @State private var playErrorMessage: String?
+    @State private var viewModel = MatchDetailViewModel()
     @State private var shareStatus: String?
 
     var body: some View {
@@ -70,29 +63,35 @@ struct MatchDetailView: View {
 
             DealSectionView(
                 match: match,
-                initialDeal: initialDeal,
-                completedDeal: completedDeal,
-                selectedTakingRound: $selectedTakingRound,
-                selectedTakerSeat: $selectedTakerSeat,
-                selectedTrump: $selectedDealTrump,
+                initialDeal: viewModel.initialDeal,
+                completedDeal: viewModel.completedDeal,
+                selectedTakingRound: $viewModel.selectedTakingRound,
+                selectedTakerSeat: $viewModel.selectedTakerSeat,
+                selectedTrump: $viewModel.selectedDealTrump,
                 onStartDeal: startDeal,
                 onCompleteDeal: completeDeal
             )
-            if let dealStatus {
+            if let dealStatus = viewModel.dealStatus {
                 Text(dealStatus)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            if let playSession {
+            if let playSession = viewModel.playSession {
                 RoundPlaySectionView(
                     match: match,
                     session: playSession,
                     cardValueService: dependencies.cardValueService,
                     playableCardService: dependencies.playableCardService,
-                    errorMessage: playErrorMessage,
-                    onPlayCard: playCard
+                    errorMessage: viewModel.playErrorMessage,
+                    onPlayCard: playCard,
+                    onConfirmRound: confirmPlayedRound
                 )
+            }
+            if let roundFinalizationStatus = viewModel.roundFinalizationStatus {
+                Text(roundFinalizationStatus)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Manches") {
@@ -133,8 +132,8 @@ struct MatchDetailView: View {
             CardReferenceView(defaultGameMode: defaultGameMode)
         }
         .onAppear {
-            selectedDealTrump = defaultGameMode.contract
-            selectedTakerSeat = match.nextDealerSeat.next
+            viewModel.configure(defaultGameMode: defaultGameMode, nextDealerSeat: match.nextDealerSeat)
+            restoreActiveRoundIfNeeded()
         }
     }
 
@@ -188,65 +187,65 @@ struct MatchDetailView: View {
     }
 
     private func startDeal() {
-        let deal = dependencies.dealService.startDeal(dealerSeat: match.nextDealerSeat)
-        initialDeal = deal
-        completedDeal = nil
-        playSession = nil
-        playErrorMessage = nil
-        selectedTakingRound = .firstRound
-        selectedTakerSeat = match.nextDealerSeat.next
-        selectedDealTrump = availableSecondRoundTrumps(for: deal).first ?? defaultGameMode.contract
-        dealStatus = nil
+        viewModel.startDeal(
+            nextDealerSeat: match.nextDealerSeat,
+            defaultGameMode: defaultGameMode,
+            dealService: dependencies.dealService
+        )
     }
 
     private func completeDeal() {
-        guard let initialDeal else {
-            dealStatus = "Distribue d'abord les 5 cartes et la retourne."
-            return
-        }
-
-        let selection: BeloteContractSelection
-        switch selectedTakingRound {
-        case .firstRound:
-            selection = .firstRound(takerSeat: selectedTakerSeat)
-        case .secondRound:
-            selection = .secondRound(takerSeat: selectedTakerSeat, trump: selectedDealTrump)
-        }
-
-        do {
-            let deal = try dependencies.dealService.completeDeal(initialDeal, selection: selection)
-            completedDeal = deal
-            playSession = dependencies.roundPlayService.startSession(from: deal)
-            playErrorMessage = nil
-            dealStatus = nil
-        } catch {
-            dealStatus = error.localizedDescription
-        }
-    }
-
-    private func availableSecondRoundTrumps(for deal: BeloteInitialDeal) -> [BeloteSuit] {
-        BeloteSuit.allCases.filter { suit in
-            suit.cardSuit != nil && suit != deal.proposedTrump
-        }
+        viewModel.completeDeal(
+            dealService: dependencies.dealService,
+            roundPlayService: dependencies.roundPlayService
+        )
+        saveActiveRoundIfNeeded()
     }
 
     private func playCard(seat: BelotePlayerSeat, card: BeloteCard) {
-        guard let playSession else {
+        viewModel.playCard(
+            seat: seat,
+            card: card,
+            cardValueService: dependencies.cardValueService,
+            trickResolvingService: dependencies.trickResolvingService,
+            playableCardService: dependencies.playableCardService,
+            roundPlayService: dependencies.roundPlayService
+        )
+        saveActiveRoundIfNeeded()
+    }
+
+    private func confirmPlayedRound() {
+        guard let round = viewModel.makeRoundFromCompletedSession(scoringService: dependencies.roundScoringService) else {
+            return
+        }
+
+        match.rounds.append(round)
+        dependencies.roundPlaySessionPersistenceService.clear(in: match)
+    }
+
+    private func saveActiveRoundIfNeeded() {
+        guard let playSession = viewModel.playSession else {
             return
         }
 
         do {
-            self.playSession = try dependencies.roundPlayService.play(
-                card: card,
-                for: seat,
-                in: playSession,
-                cardValueService: dependencies.cardValueService,
-                trickResolvingService: dependencies.trickResolvingService,
-                playableCardService: dependencies.playableCardService
-            )
-            playErrorMessage = nil
+            try dependencies.roundPlaySessionPersistenceService.save(playSession, in: match)
         } catch {
-            playErrorMessage = error.localizedDescription
+            viewModel.roundFinalizationStatus = error.localizedDescription
+        }
+    }
+
+    private func restoreActiveRoundIfNeeded() {
+        guard viewModel.playSession == nil else {
+            return
+        }
+
+        do {
+            if let session = try dependencies.roundPlaySessionPersistenceService.load(from: match) {
+                viewModel.restore(session: session)
+            }
+        } catch {
+            viewModel.roundFinalizationStatus = error.localizedDescription
         }
     }
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum BeloteCardSuit: String, CaseIterable, Identifiable {
+enum BeloteCardSuit: String, CaseIterable, Codable, Identifiable {
     case clubs
     case diamonds
     case hearts
@@ -42,7 +42,7 @@ enum BeloteCardSuit: String, CaseIterable, Identifiable {
     }
 }
 
-enum BeloteCardRank: String, CaseIterable, Identifiable {
+enum BeloteCardRank: String, CaseIterable, Codable, Identifiable {
     case seven
     case eight
     case nine
@@ -76,7 +76,7 @@ enum BeloteCardRank: String, CaseIterable, Identifiable {
     }
 }
 
-struct BeloteCard: Hashable, Identifiable {
+struct BeloteCard: Codable, Hashable, Identifiable {
     let suit: BeloteCardSuit
     let rank: BeloteCardRank
 

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct BeloteCompletedTrick: Equatable, Identifiable {
+struct BeloteCompletedTrick: Codable, Equatable, Identifiable {
     let index: Int
     let trick: BeloteTrick
     let result: BeloteTrickResult
@@ -15,7 +15,7 @@ struct BeloteCompletedTrick: Equatable, Identifiable {
     var id: Int { index }
 }
 
-struct BeloteRoundPlaySession: Equatable {
+struct BeloteRoundPlaySession: Codable, Equatable {
     let completedDeal: BeloteCompletedDeal
     var hands: [BeloteHand]
     var currentLeaderSeat: BelotePlayerSeat
@@ -24,6 +24,7 @@ struct BeloteRoundPlaySession: Equatable {
     var completedTricks: [BeloteCompletedTrick]
     var teamATrickPoints: Int
     var teamBTrickPoints: Int
+    var beloteTeam: BeloteTeam?
 
     var isComplete: Bool {
         completedTricks.count == 8
@@ -82,7 +83,8 @@ struct StandardBeloteRoundPlayService: BeloteRoundPlayService {
             currentPlayedCards: [],
             completedTricks: [],
             teamATrickPoints: 0,
-            teamBTrickPoints: 0
+            teamBTrickPoints: 0,
+            beloteTeam: nil
         )
     }
 
@@ -114,6 +116,11 @@ struct StandardBeloteRoundPlayService: BeloteRoundPlayService {
         }
 
         var nextSession = session
+        if nextSession.beloteTeam == nil,
+           hasBeloteRebelote(card: card, in: session.hand(for: seat), trump: session.completedDeal.trump) {
+            nextSession.beloteTeam = seat.team
+        }
+
         try remove(card: card, from: seat, in: &nextSession)
         nextSession.currentPlayedCards.append(BelotePlayedCard(seat: seat, card: card))
 
@@ -170,5 +177,16 @@ struct StandardBeloteRoundPlayService: BeloteRoundPlayService {
         case .teamB:
             session.teamBTrickPoints += points
         }
+    }
+
+    private func hasBeloteRebelote(card: BeloteCard, in hand: [BeloteCard], trump: BeloteSuit) -> Bool {
+        guard let trumpSuit = trump.cardSuit,
+              card.suit == trumpSuit,
+              card.rank == .king || card.rank == .queen else {
+            return false
+        }
+
+        let requiredRank: BeloteCardRank = card.rank == .king ? .queen : .king
+        return hand.contains(BeloteCard(suit: trumpSuit, rank: requiredRank))
     }
 }

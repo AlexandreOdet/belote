@@ -14,6 +14,7 @@ struct RoundPlaySectionView: View {
     let playableCardService: any BelotePlayableCardService
     let errorMessage: String?
     let onPlayCard: (BelotePlayerSeat, BeloteCard) -> Void
+    let onConfirmRound: () -> Void
 
     var body: some View {
         Section("Jeu") {
@@ -30,6 +31,25 @@ struct RoundPlaySectionView: View {
                     ScorePill(name: match.teamAName, score: session.teamATrickPoints)
                     ScorePill(name: match.teamBName, score: session.teamBTrickPoints)
                 }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Label("Donneur: \(match.displayName(for: session.completedDeal.dealerSeat))", systemImage: "arrow.triangle.2.circlepath")
+                        Spacer()
+                        Label("Preneur: \(match.displayName(for: session.completedDeal.takerSeat))", systemImage: "person.fill.checkmark")
+                    }
+
+                    HStack {
+                        Label(session.completedDeal.trump.title, systemImage: session.completedDeal.trump.symbol)
+                        Spacer()
+                        HStack(spacing: 6) {
+                            Text("Retourne")
+                            PlayCardBadge(card: session.completedDeal.turnedCard)
+                        }
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
                 if !session.currentPlayedCards.isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
@@ -50,10 +70,29 @@ struct RoundPlaySectionView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                if let beloteTeam = session.beloteTeam {
+                    Label("Belote/Rebelote \(match.displayName(for: beloteTeam))", systemImage: "suit.heart.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if !session.completedTricks.isEmpty {
+                    CompletedTricksView(match: match, tricks: session.completedTricks)
+                }
+
                 if session.isComplete {
-                    Label("Manche terminée", systemImage: "checkmark.seal.fill")
-                        .font(.headline)
-                        .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Manche terminee", systemImage: "checkmark.seal.fill")
+                            .font(.headline)
+                            .foregroundStyle(.green)
+
+                        Button {
+                            onConfirmRound()
+                        } label: {
+                            Label("Ajouter au score", systemImage: "checkmark.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 }
 
                 if let errorMessage {
@@ -135,6 +174,31 @@ private struct PlayedCardBadge: View {
             Text(match.displayName(for: playedCard.seat))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct CompletedTricksView: View {
+    let match: BeloteMatch
+    let tricks: [BeloteCompletedTrick]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Plis gagnes")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach(tricks) { trick in
+                HStack {
+                    Text("Pli \(trick.index)")
+                    Spacer()
+                    Text(match.displayName(for: trick.result.winningSeat))
+                    Text("+\(trick.result.points)")
+                        .fontWeight(.semibold)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
         }
     }
 }

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct BelotePlayedCard: Hashable, Identifiable {
+struct BelotePlayedCard: Codable, Hashable, Identifiable {
     let seat: BelotePlayerSeat
     let card: BeloteCard
 
@@ -16,7 +16,7 @@ struct BelotePlayedCard: Hashable, Identifiable {
     }
 }
 
-struct BeloteTrick: Equatable {
+struct BeloteTrick: Codable, Equatable {
     let leaderSeat: BelotePlayerSeat
     let playedCards: [BelotePlayedCard]
 
@@ -34,7 +34,7 @@ struct BeloteTrick: Equatable {
     }
 }
 
-struct BeloteTrickResult: Equatable {
+struct BeloteTrickResult: Codable, Equatable {
     let winningSeat: BelotePlayerSeat
     let winningTeam: BeloteTeam
     let points: Int

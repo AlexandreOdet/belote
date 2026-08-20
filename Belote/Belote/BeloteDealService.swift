@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct BeloteHand: Equatable, Identifiable {
+struct BeloteHand: Codable, Equatable, Identifiable {
     let seat: BelotePlayerSeat
     let cards: [BeloteCard]
 
     var id: Int { seat.rawValue }
 }
 
-struct BeloteInitialDeal: Equatable {
+struct BeloteInitialDeal: Codable, Equatable {
     let dealerSeat: BelotePlayerSeat
     let hands: [BeloteHand]
     let turnedCard: BeloteCard
@@ -29,7 +29,7 @@ struct BeloteInitialDeal: Equatable {
     }
 }
 
-struct BeloteCompletedDeal: Equatable {
+struct BeloteCompletedDeal: Codable, Equatable {
     let dealerSeat: BelotePlayerSeat
     let takerSeat: BelotePlayerSeat
     let trump: BeloteSuit

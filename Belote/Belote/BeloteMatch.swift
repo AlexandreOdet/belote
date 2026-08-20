@@ -21,6 +21,7 @@ final class BeloteMatch {
     var teamBPlayerTwoName: String
     var firstDealerSeatRaw: Int
     var targetScore: Int
+    var activeRoundPlaySessionData: Data?
     @Relationship(deleteRule: .cascade, inverse: \BeloteRound.match) var rounds: [BeloteRound]
 
     init(
@@ -34,6 +35,7 @@ final class BeloteMatch {
         teamBPlayerTwoName: String = "Joueur 4",
         firstDealerSeat: BelotePlayerSeat = .teamAPlayerOne,
         targetScore: Int = 1_000,
+        activeRoundPlaySessionData: Data? = nil,
         rounds: [BeloteRound] = []
     ) {
         self.matchIDRaw = matchID.uuidString
@@ -47,6 +49,7 @@ final class BeloteMatch {
         self.teamBPlayerTwoName = teamBPlayerTwoName
         self.firstDealerSeatRaw = firstDealerSeat.rawValue
         self.targetScore = targetScore
+        self.activeRoundPlaySessionData = activeRoundPlaySessionData
         self.rounds = rounds
     }
 

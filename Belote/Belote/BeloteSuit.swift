@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum BeloteSuit: String, CaseIterable, Identifiable {
+enum BeloteSuit: String, CaseIterable, Codable, Identifiable {
     case clubs
     case diamonds
     case hearts
