@@ -19,6 +19,7 @@ struct MatchDetailView: View {
     @State private var shareStatus: String?
     @State private var cloudInviteCode = ""
     @State private var isSyncingCloudKit = false
+    @State private var isShowingQRCode = false
 
     var body: some View {
         List {
@@ -63,6 +64,12 @@ struct MatchDetailView: View {
                     Label("Synchroniser CloudKit", systemImage: "icloud.and.arrow.up")
                 }
                 .disabled(isSyncingCloudKit)
+
+                Button {
+                    isShowingQRCode = true
+                } label: {
+                    Label("Afficher QR Code", systemImage: "qrcode")
+                }
 
                 Button {
                     downloadCloudKitCopy()
@@ -147,6 +154,9 @@ struct MatchDetailView: View {
         }
         .sheet(isPresented: $isShowingCardReference) {
             CardReferenceView(defaultGameMode: defaultGameMode)
+        }
+        .sheet(isPresented: $isShowingQRCode) {
+            MatchQRCodeView(match: match, joinLinkService: dependencies.joinLinkService)
         }
         .onAppear {
             viewModel.configure(defaultGameMode: defaultGameMode, nextDealerSeat: match.nextDealerSeat)

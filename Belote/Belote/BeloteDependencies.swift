@@ -17,6 +17,7 @@ struct BeloteDependencies {
     var playableCardService: any BelotePlayableCardService
     var roundPlaySessionPersistenceService: any BeloteRoundPlaySessionPersistenceService
     var matchSyncService: any BeloteMatchSyncService
+    var joinLinkService: any BeloteJoinLinkService
 
     static let live = BeloteDependencies(
         roundScoringService: StandardBeloteRoundScoringService(),
@@ -27,7 +28,8 @@ struct BeloteDependencies {
         roundPlayService: StandardBeloteRoundPlayService(),
         playableCardService: StandardBelotePlayableCardService(),
         roundPlaySessionPersistenceService: StandardBeloteRoundPlaySessionPersistenceService(),
-        matchSyncService: CloudKitBeloteMatchSyncService()
+        matchSyncService: CloudKitBeloteMatchSyncService(),
+        joinLinkService: StandardBeloteJoinLinkService()
     )
 }
 
