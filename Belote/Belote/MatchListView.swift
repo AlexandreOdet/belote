@@ -55,12 +55,14 @@ struct MatchListView: View {
                             Label("Nouvelle partie", systemImage: "plus")
                         }
                         .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("new-match-empty-button")
 
                         Button {
                             onJoinMatch()
                         } label: {
                             Label("Rejoindre", systemImage: "qrcode.viewfinder")
                         }
+                        .accessibilityIdentifier("join-match-empty-button")
                     }
                 }
             }
@@ -73,6 +75,7 @@ struct MatchListView: View {
                     Image(systemName: "qrcode.viewfinder")
                 }
                 .help("Rejoindre une partie")
+                .accessibilityIdentifier("join-match-toolbar-button")
             }
             ToolbarItem(placement: addButtonPlacement) {
                 Button {
@@ -81,6 +84,7 @@ struct MatchListView: View {
                     Image(systemName: "plus")
                 }
                 .help("Nouvelle partie")
+                .accessibilityIdentifier("new-match-toolbar-button")
             }
         }
     }

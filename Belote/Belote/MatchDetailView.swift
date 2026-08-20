@@ -70,6 +70,7 @@ struct MatchDetailView: View {
                 } label: {
                     Label("Afficher QR Code", systemImage: "qrcode")
                 }
+                .accessibilityIdentifier("show-match-qr-code-button")
 
                 Button {
                     downloadCloudKitCopy()

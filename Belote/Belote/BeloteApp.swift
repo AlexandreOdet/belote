@@ -10,19 +10,7 @@ import SwiftData
 
 @main
 struct BeloteApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            BeloteMatch.self,
-            BeloteRound.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    var sharedModelContainer: ModelContainer = Self.makeModelContainer()
 
     var body: some Scene {
         WindowGroup {
@@ -30,5 +18,20 @@ struct BeloteApp: App {
                 .environment(\.beloteDependencies, .live)
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    private static func makeModelContainer() -> ModelContainer {
+        let schema = Schema([
+            BeloteMatch.self,
+            BeloteRound.self,
+        ])
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("-uiTesting")
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
+
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
     }
 }

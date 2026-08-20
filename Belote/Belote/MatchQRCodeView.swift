@@ -46,6 +46,7 @@ struct MatchQRCodeView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
+                        .accessibilityIdentifier("match-join-url-text")
                 }
             }
             .padding()

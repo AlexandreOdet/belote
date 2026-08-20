@@ -20,12 +20,14 @@ struct JoinMatchView: View {
             Form {
                 Section("Code") {
                     TextField("1234-5678", text: $viewModel.inviteCode)
+                        .accessibilityIdentifier("join-match-code-field")
                     Button {
                         importMatch()
                     } label: {
                         Label("Importer la partie", systemImage: "icloud.and.arrow.down")
                     }
                     .disabled(viewModel.isImporting || viewModel.inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("join-match-import-button")
                 }
 
                 Section("QR Code") {
