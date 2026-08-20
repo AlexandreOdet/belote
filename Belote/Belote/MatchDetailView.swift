@@ -17,6 +17,8 @@ struct MatchDetailView: View {
     @State private var isShowingCardReference = false
     @State private var viewModel = MatchDetailViewModel()
     @State private var shareStatus: String?
+    @State private var cloudInviteCode = ""
+    @State private var isSyncingCloudKit = false
 
     var body: some View {
         List {
@@ -44,6 +46,7 @@ struct MatchDetailView: View {
 
             Section("Partage") {
                 LabeledContent("Code", value: match.inviteCode)
+                TextField("Code CloudKit", text: $cloudInviteCode)
                 Button {
                     exportSnapshot()
                 } label: {
@@ -54,6 +57,20 @@ struct MatchDetailView: View {
                 } label: {
                     Label("Importer une copie", systemImage: "square.and.arrow.down")
                 }
+                Button {
+                    uploadToCloudKit()
+                } label: {
+                    Label("Synchroniser CloudKit", systemImage: "icloud.and.arrow.up")
+                }
+                .disabled(isSyncingCloudKit)
+
+                Button {
+                    downloadCloudKitCopy()
+                } label: {
+                    Label("Importer depuis CloudKit", systemImage: "icloud.and.arrow.down")
+                }
+                .disabled(isSyncingCloudKit || cloudInviteCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
                 if let shareStatus {
                     Text(shareStatus)
                         .font(.caption)
@@ -133,6 +150,7 @@ struct MatchDetailView: View {
         }
         .onAppear {
             viewModel.configure(defaultGameMode: defaultGameMode, nextDealerSeat: match.nextDealerSeat)
+            cloudInviteCode = match.inviteCode
             restoreActiveRoundIfNeeded()
         }
     }
@@ -183,6 +201,45 @@ struct MatchDetailView: View {
             shareStatus = "Copie importée depuis JSON"
         } catch {
             shareStatus = error.localizedDescription
+        }
+    }
+
+    private func uploadToCloudKit() {
+        isSyncingCloudKit = true
+        shareStatus = "Synchronisation CloudKit en cours..."
+
+        Task {
+            do {
+                let reference = try await dependencies.matchSyncService.upload(
+                    match: match,
+                    sharingService: dependencies.matchSharingService
+                )
+                shareStatus = "Partie synchronisee avec le code \(reference.inviteCode)"
+            } catch {
+                shareStatus = error.localizedDescription
+            }
+
+            isSyncingCloudKit = false
+        }
+    }
+
+    private func downloadCloudKitCopy() {
+        isSyncingCloudKit = true
+        shareStatus = "Import CloudKit en cours..."
+
+        Task {
+            do {
+                let importedMatch = try await dependencies.matchSyncService.download(
+                    inviteCode: cloudInviteCode,
+                    sharingService: dependencies.matchSharingService
+                )
+                modelContext.insert(importedMatch)
+                shareStatus = "Copie importee depuis CloudKit"
+            } catch {
+                shareStatus = error.localizedDescription
+            }
+
+            isSyncingCloudKit = false
         }
     }
 
