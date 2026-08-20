@@ -26,8 +26,18 @@ struct MatchDetailView: View {
             Section {
                 VStack(spacing: 16) {
                     HStack(spacing: 12) {
-                        ScoreCard(name: match.teamAName, score: match.teamAScore)
-                        ScoreCard(name: match.teamBName, score: match.teamBScore)
+                        ScoreCard(
+                            name: match.teamAName,
+                            score: match.teamAScore,
+                            targetScore: match.targetScore,
+                            isLeading: match.teamAScore >= match.teamBScore
+                        )
+                        ScoreCard(
+                            name: match.teamBName,
+                            score: match.teamBScore,
+                            targetScore: match.targetScore,
+                            isLeading: match.teamBScore > match.teamAScore
+                        )
                     }
 
                     if let winningTeam = match.winningTeam {
@@ -48,29 +58,26 @@ struct MatchDetailView: View {
             Section("Partage") {
                 LabeledContent("Code", value: match.inviteCode)
                 TextField("Code CloudKit", text: $cloudInviteCode)
-                Button {
-                    exportSnapshot()
-                } label: {
-                    Label("Exporter JSON", systemImage: "square.and.arrow.up")
-                }
-                Button {
-                    importSnapshotCopy()
-                } label: {
-                    Label("Importer une copie", systemImage: "square.and.arrow.down")
-                }
-                Button {
-                    uploadToCloudKit()
-                } label: {
-                    Label("Synchroniser CloudKit", systemImage: "icloud.and.arrow.up")
-                }
-                .disabled(isSyncingCloudKit)
 
-                Button {
-                    isShowingQRCode = true
-                } label: {
-                    Label("Afficher QR Code", systemImage: "qrcode")
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
+                    ShareActionButton(title: "Exporter", systemImage: "square.and.arrow.up", isProminent: false) {
+                        exportSnapshot()
+                    }
+
+                    ShareActionButton(title: "Copier local", systemImage: "square.and.arrow.down", isProminent: false) {
+                        importSnapshotCopy()
+                    }
+
+                    ShareActionButton(title: "CloudKit", systemImage: "icloud.and.arrow.up", isProminent: true) {
+                        uploadToCloudKit()
+                    }
+                    .disabled(isSyncingCloudKit)
+
+                    ShareActionButton(title: "QR Code", systemImage: "qrcode", isProminent: false) {
+                        isShowingQRCode = true
+                    }
+                    .accessibilityIdentifier("show-match-qr-code-button")
                 }
-                .accessibilityIdentifier("show-match-qr-code-button")
 
                 Button {
                     downloadCloudKitCopy()
@@ -321,21 +328,62 @@ struct MatchDetailView: View {
 struct ScoreCard: View {
     let name: String
     let score: Int
+    let targetScore: Int
+    let isLeading: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(name)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            Text("\(score)")
-                .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                .contentTransition(.numericText())
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(name)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer()
+                if isLeading {
+                    Image(systemName: "chevron.up.circle.fill")
+                        .foregroundStyle(.green)
+                }
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(score)")
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .contentTransition(.numericText())
+                Text("/ \(targetScore)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            ProgressView(value: Double(score), total: Double(targetScore))
+                .tint(isLeading ? .green : .secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(.thinMaterial)
+        .background(isLeading ? Color.green.opacity(0.10) : Color.secondary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct ShareActionButton: View {
+    let title: String
+    let systemImage: String
+    let isProminent: Bool
+    let action: () -> Void
+
+    var body: some View {
+        if isProminent {
+            Button(action: action) {
+                Label(title, systemImage: systemImage)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        } else {
+            Button(action: action) {
+                Label(title, systemImage: systemImage)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+        }
     }
 }
 

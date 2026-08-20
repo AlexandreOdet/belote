@@ -122,26 +122,39 @@ struct MatchRow: View {
     let match: BeloteMatch
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("\(match.teamAName) vs \(match.teamBName)")
                     .font(.headline)
                     .lineLimit(1)
                 Spacer()
                 if let winningTeam = match.winningTeam {
-                    Text(match.displayName(for: winningTeam))
+                    Label(match.displayName(for: winningTeam), systemImage: "checkmark.seal.fill")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.green)
                 }
             }
 
-            HStack(spacing: 12) {
-                ScorePill(name: match.teamAName, score: match.teamAScore)
-                ScorePill(name: match.teamBName, score: match.teamBScore)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    ScorePill(name: match.teamAName, score: match.teamAScore)
+                    ScorePill(name: match.teamBName, score: match.teamBScore)
+                }
+
+                ProgressView(value: Double(max(match.teamAScore, match.teamBScore)), total: Double(match.targetScore))
+                    .tint(match.teamAScore >= match.teamBScore ? .blue : .orange)
             }
+
+            HStack {
+                Label("\(match.sortedRounds.count) manches", systemImage: "list.number")
+                Spacer()
+                Label(match.displayName(for: match.nextDealerSeat), systemImage: "arrow.triangle.2.circlepath")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
     }
 }
 
@@ -157,6 +170,9 @@ struct ScorePill: View {
                 .fontWeight(.semibold)
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color.secondary.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }

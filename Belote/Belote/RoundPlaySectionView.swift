@@ -18,14 +18,25 @@ struct RoundPlaySectionView: View {
 
     var body: some View {
         Section("Jeu") {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Label("À jouer: \(match.displayName(for: session.currentSeat))", systemImage: "hand.point.up.left.fill")
-                    Spacer()
-                    Text("Pli \(min(session.completedTricks.count + 1, 8))/8")
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Label("À jouer", systemImage: "hand.point.up.left.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("Pli \(min(session.completedTricks.count + 1, 8))/8")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(match.displayName(for: session.currentSeat))
+                        .font(.title3)
+                        .fontWeight(.semibold)
+
+                    ProgressView(value: Double(session.completedTricks.count), total: 8)
+                        .tint(.green)
                 }
-                .font(.subheadline)
 
                 HStack(spacing: 12) {
                     ScorePill(name: match.teamAName, score: session.teamATrickPoints)
@@ -105,9 +116,25 @@ struct RoundPlaySectionView: View {
 
             ForEach(session.hands) { hand in
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(match.displayName(for: hand.seat))
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                    HStack {
+                        Text(match.displayName(for: hand.seat))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        if hand.seat == session.currentSeat && !session.isComplete {
+                            Text("A jouer")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.green.opacity(0.16))
+                                .foregroundStyle(.green)
+                                .clipShape(Capsule())
+                        }
+                        Spacer()
+                        Text("\(hand.cards.count) cartes")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
                     ScrollView(.horizontal) {
                         HStack(spacing: 6) {
@@ -116,7 +143,7 @@ struct RoundPlaySectionView: View {
                                 Button {
                                     onPlayCard(hand.seat, card)
                                 } label: {
-                                    PlayCardBadge(card: card)
+                                    PlayCardBadge(card: card, isPlayable: canPlay)
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(!canPlay)
@@ -149,18 +176,38 @@ struct RoundPlaySectionView: View {
 
 private struct PlayCardBadge: View {
     let card: BeloteCard
+    var isPlayable = true
 
     var body: some View {
-        HStack(spacing: 4) {
+        VStack(spacing: 4) {
             Text(card.rank.shortTitle)
-                .fontWeight(.semibold)
+                .font(.headline)
+                .fontWeight(.bold)
             Image(systemName: card.suit.symbol)
+                .font(.title3)
+                .foregroundStyle(suitColor)
         }
-        .font(.caption)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(Color.accentColor.opacity(0.14))
+        .frame(width: 46, height: 58)
+        .background(isPlayable ? Color.white : Color.secondary.opacity(0.08))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(isPlayable ? suitColor.opacity(0.45) : Color.secondary.opacity(0.20), lineWidth: 1)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 6))
+        .shadow(color: isPlayable ? suitColor.opacity(0.12) : .clear, radius: 2, y: 1)
+    }
+
+    private var suitColor: Color {
+        switch card.suit {
+        case .clubs:
+            return .green
+        case .diamonds:
+            return .orange
+        case .hearts:
+            return .red
+        case .spades:
+            return .primary
+        }
     }
 }
 
