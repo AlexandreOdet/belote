@@ -10,16 +10,20 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.beloteDependencies) private var dependencies
     @AppStorage("defaultBeloteContractRaw") private var defaultBeloteContractRaw = BeloteSuit.hearts.rawValue
     @State private var selectedMatch: BeloteMatch?
     @State private var isShowingNewMatch = false
+    @State private var isShowingJoinMatch = false
+    @State private var pendingJoinURL: URL?
 
     var body: some View {
         NavigationSplitView {
             MatchListView(
                 selectedMatch: $selectedMatch,
                 defaultBeloteContractRaw: $defaultBeloteContractRaw,
-                onNewMatch: showNewMatch
+                onNewMatch: showNewMatch,
+                onJoinMatch: showJoinMatch
             )
         } detail: {
             if let selectedMatch {
@@ -38,6 +42,21 @@ struct ContentView: View {
                 selectedMatch = match
             }
         }
+        .sheet(isPresented: $isShowingJoinMatch) {
+            JoinMatchView(initialURL: pendingJoinURL) { match in
+                modelContext.insert(match)
+                selectedMatch = match
+                pendingJoinURL = nil
+            }
+        }
+        .onOpenURL { url in
+            guard dependencies.joinLinkService.inviteCode(from: url) != nil else {
+                return
+            }
+
+            pendingJoinURL = url
+            isShowingJoinMatch = true
+        }
     }
 
     private var defaultGameMode: BeloteGameMode {
@@ -46,6 +65,11 @@ struct ContentView: View {
 
     private func showNewMatch() {
         isShowingNewMatch = true
+    }
+
+    private func showJoinMatch() {
+        pendingJoinURL = nil
+        isShowingJoinMatch = true
     }
 }
 

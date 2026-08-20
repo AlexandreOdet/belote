@@ -14,6 +14,7 @@ struct MatchListView: View {
     @Binding var selectedMatch: BeloteMatch?
     @Binding var defaultBeloteContractRaw: String
     let onNewMatch: () -> Void
+    let onJoinMatch: () -> Void
 
     var body: some View {
         List(selection: $selectedMatch) {
@@ -47,16 +48,32 @@ struct MatchListView: View {
                 } description: {
                     Text("Crée une partie pour commencer à suivre les scores.")
                 } actions: {
-                    Button {
-                        onNewMatch()
-                    } label: {
-                        Label("Nouvelle partie", systemImage: "plus")
+                    HStack {
+                        Button {
+                            onNewMatch()
+                        } label: {
+                            Label("Nouvelle partie", systemImage: "plus")
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button {
+                            onJoinMatch()
+                        } label: {
+                            Label("Rejoindre", systemImage: "qrcode.viewfinder")
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
                 }
             }
         }
         .toolbar {
+            ToolbarItem(placement: joinButtonPlacement) {
+                Button {
+                    onJoinMatch()
+                } label: {
+                    Image(systemName: "qrcode.viewfinder")
+                }
+                .help("Rejoindre une partie")
+            }
             ToolbarItem(placement: addButtonPlacement) {
                 Button {
                     onNewMatch()
@@ -73,6 +90,14 @@ struct MatchListView: View {
         .navigationBarTrailing
 #else
         .primaryAction
+#endif
+    }
+
+    private var joinButtonPlacement: ToolbarItemPlacement {
+#if os(iOS)
+        .navigationBarLeading
+#else
+        .automatic
 #endif
     }
 
