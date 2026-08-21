@@ -17,10 +17,20 @@ struct MatchDetailViewModel {
     var playSession: BeloteRoundPlaySession?
     var playErrorMessage: String?
     var roundFinalizationStatus: String?
+    private(set) var matchState: BeloteMatchState = .readyForDeal(dealerSeat: .teamAPlayerOne)
 
     mutating func configure(defaultGameMode: BeloteGameMode, nextDealerSeat: BelotePlayerSeat) {
         selectedDealTrump = defaultGameMode.contract
         selectedTakerSeat = nextDealerSeat.next
+    }
+
+    mutating func refreshState(for match: BeloteMatch, stateService: any BeloteMatchStateService) {
+        matchState = stateService.state(
+            for: match,
+            initialDeal: initialDeal,
+            completedDeal: completedDeal,
+            playSession: playSession
+        )
     }
 
     mutating func startDeal(

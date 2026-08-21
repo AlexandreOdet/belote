@@ -51,6 +51,8 @@ struct MatchDetailView: View {
                     Label("Prochain donneur: \(match.displayName(for: match.nextDealerSeat))", systemImage: "arrow.triangle.2.circlepath")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+
+                    MatchStateBanner(match: match, state: viewModel.matchState)
                 }
                 .padding(.vertical, 8)
             }
@@ -170,6 +172,7 @@ struct MatchDetailView: View {
             viewModel.configure(defaultGameMode: defaultGameMode, nextDealerSeat: match.nextDealerSeat)
             cloudInviteCode = match.inviteCode
             restoreActiveRoundIfNeeded()
+            refreshMatchState()
         }
     }
 
@@ -197,6 +200,7 @@ struct MatchDetailView: View {
                 modelContext.delete(rounds[index])
             }
         }
+        refreshMatchState()
     }
 
     private func exportSnapshot() {
@@ -267,6 +271,7 @@ struct MatchDetailView: View {
             defaultGameMode: defaultGameMode,
             dealService: dependencies.dealService
         )
+        refreshMatchState()
     }
 
     private func completeDeal() {
@@ -275,6 +280,7 @@ struct MatchDetailView: View {
             roundPlayService: dependencies.roundPlayService
         )
         saveActiveRoundIfNeeded()
+        refreshMatchState()
     }
 
     private func playCard(seat: BelotePlayerSeat, card: BeloteCard) {
@@ -287,15 +293,18 @@ struct MatchDetailView: View {
             roundPlayService: dependencies.roundPlayService
         )
         saveActiveRoundIfNeeded()
+        refreshMatchState()
     }
 
     private func confirmPlayedRound() {
         guard let round = viewModel.makeRoundFromCompletedSession(scoringService: dependencies.roundScoringService) else {
+            refreshMatchState()
             return
         }
 
         match.rounds.append(round)
         dependencies.roundPlaySessionPersistenceService.clear(in: match)
+        refreshMatchState()
     }
 
     private func saveActiveRoundIfNeeded() {
@@ -318,9 +327,55 @@ struct MatchDetailView: View {
         do {
             if let session = try dependencies.roundPlaySessionPersistenceService.load(from: match) {
                 viewModel.restore(session: session)
+                refreshMatchState()
             }
         } catch {
             viewModel.roundFinalizationStatus = error.localizedDescription
+        }
+    }
+
+    private func refreshMatchState() {
+        viewModel.refreshState(for: match, stateService: dependencies.matchStateService)
+    }
+}
+
+private struct MatchStateBanner: View {
+    let match: BeloteMatch
+    let state: BeloteMatchState
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(state.title)
+                    .font(.subheadline.weight(.semibold))
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        } icon: {
+            Image(systemName: state.systemImage)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.accentColor.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var subtitle: String {
+        switch state {
+        case let .readyForDeal(dealerSeat):
+            return "Donneur: \(match.displayName(for: dealerSeat))"
+        case let .choosingTrump(_, turnedCard, proposedTrump):
+            return "Carte tournee: \(turnedCard.title). Atout propose: \(proposedTrump.title)."
+        case let .readyToPlay(takerSeat, trump):
+            return "Preneur: \(match.displayName(for: takerSeat)). Atout: \(trump.title)."
+        case let .playingRound(currentSeat, trickNumber, playedCardCount):
+            return "Pli \(trickNumber), carte \(playedCardCount + 1): \(match.displayName(for: currentSeat)) joue."
+        case let .roundReadyToScore(takerTeam, teamATrickPoints, teamBTrickPoints):
+            return "\(match.displayName(for: takerTeam)) a pris. Plis: \(match.teamAName) \(teamATrickPoints), \(match.teamBName) \(teamBTrickPoints)."
+        case let .matchComplete(winningTeam):
+            return "\(match.displayName(for: winningTeam)) a atteint le score cible."
         }
     }
 }
