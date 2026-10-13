@@ -19,8 +19,7 @@ struct MatchDetailViewModel {
     var roundFinalizationStatus: String?
     private(set) var matchState: BeloteMatchState = .readyForDeal(dealerSeat: .teamAPlayerOne)
 
-    mutating func configure(defaultGameMode: BeloteGameMode, nextDealerSeat: BelotePlayerSeat) {
-        selectedDealTrump = defaultGameMode.contract
+    mutating func configure(nextDealerSeat: BelotePlayerSeat) {
         selectedTakerSeat = nextDealerSeat.next
     }
 
@@ -35,7 +34,6 @@ struct MatchDetailViewModel {
 
     mutating func startDeal(
         nextDealerSeat: BelotePlayerSeat,
-        defaultGameMode: BeloteGameMode,
         dealService: any BeloteDealService
     ) {
         let deal = dealService.startDeal(dealerSeat: nextDealerSeat)
@@ -46,7 +44,9 @@ struct MatchDetailViewModel {
         roundFinalizationStatus = nil
         selectedTakingRound = .firstRound
         selectedTakerSeat = nextDealerSeat.next
-        selectedDealTrump = availableSecondRoundTrumps(for: deal).first ?? defaultGameMode.contract
+        // The custom trump is only chosen in-game, at the second taking round,
+        // among the three suits other than the turned card.
+        selectedDealTrump = availableSecondRoundTrumps(for: deal).first ?? .hearts
         dealStatus = nil
     }
 

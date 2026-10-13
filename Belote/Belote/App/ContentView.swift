@@ -11,7 +11,6 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.beloteDependencies) private var dependencies
-    @AppStorage("defaultBeloteContractRaw") private var defaultBeloteContractRaw = BeloteSuit.hearts.rawValue
     @State private var selectedMatch: BeloteMatch?
     @State private var isShowingNewMatch = false
     @State private var isShowingJoinMatch = false
@@ -21,13 +20,12 @@ struct ContentView: View {
         NavigationSplitView {
             MatchListView(
                 selectedMatch: $selectedMatch,
-                defaultBeloteContractRaw: $defaultBeloteContractRaw,
                 onNewMatch: showNewMatch,
                 onJoinMatch: showJoinMatch
             )
         } detail: {
             if let selectedMatch {
-                MatchDetailView(match: selectedMatch, defaultGameMode: defaultGameMode)
+                MatchDetailView(match: selectedMatch)
             } else {
                 ContentUnavailableView(
                     "Sélectionne une partie",
@@ -57,10 +55,6 @@ struct ContentView: View {
             pendingJoinURL = url
             isShowingJoinMatch = true
         }
-    }
-
-    private var defaultGameMode: BeloteGameMode {
-        .standard(contract: BeloteSuit(rawValue: defaultBeloteContractRaw) ?? .hearts)
     }
 
     private func showNewMatch() {

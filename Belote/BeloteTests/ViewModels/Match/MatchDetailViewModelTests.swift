@@ -17,7 +17,6 @@ struct MatchDetailViewModelTests {
 
         viewModel.startDeal(
             nextDealerSeat: .teamAPlayerOne,
-            defaultGameMode: .standard(contract: .hearts),
             dealService: dealService
         )
 
@@ -30,6 +29,28 @@ struct MatchDetailViewModelTests {
     }
 
     @MainActor
+    @Test func matchDetailViewModelOffersOnlyTheThreeOtherSuitsAtSecondRound() throws {
+        let dealService = StandardBeloteDealService()
+        let roundPlayService = StandardBeloteRoundPlayService()
+        var viewModel = MatchDetailViewModel()
+
+        viewModel.startDeal(nextDealerSeat: .teamAPlayerOne, dealService: dealService)
+        let deal = try #require(viewModel.initialDeal)
+        let options = viewModel.availableSecondRoundTrumps(for: deal)
+
+        #expect(options.count == 3)
+        #expect(!options.contains(deal.proposedTrump))
+        #expect(options.allSatisfy { $0.cardSuit != nil })
+        #expect(options.contains(viewModel.selectedDealTrump))
+
+        viewModel.selectedTakingRound = .secondRound
+        viewModel.completeDeal(dealService: dealService, roundPlayService: roundPlayService)
+
+        #expect(viewModel.completedDeal?.trump == options.first)
+        #expect(viewModel.dealStatus == nil)
+    }
+
+    @MainActor
     @Test func matchDetailViewModelCompletesDealAndStartsPlaySession() {
         let dealService = StandardBeloteDealService()
         let roundPlayService = StandardBeloteRoundPlayService()
@@ -37,7 +58,6 @@ struct MatchDetailViewModelTests {
 
         viewModel.startDeal(
             nextDealerSeat: .teamAPlayerOne,
-            defaultGameMode: .standard(contract: .hearts),
             dealService: dealService
         )
         viewModel.selectedTakerSeat = .teamBPlayerOne

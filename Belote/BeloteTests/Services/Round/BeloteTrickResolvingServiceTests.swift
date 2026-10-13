@@ -28,7 +28,8 @@ struct BeloteTrickResolvingServiceTests {
 
         #expect(result.winningSeat == .teamAPlayerTwo)
         #expect(result.winningTeam == .teamA)
-        #expect(result.points == 32)
+        // Ace (11) + ten (10) + king (4) of clubs + seven of hearts trump (0).
+        #expect(result.points == 25)
     }
 
     @MainActor

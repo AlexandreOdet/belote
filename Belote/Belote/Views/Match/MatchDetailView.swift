@@ -12,7 +12,6 @@ struct MatchDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.beloteDependencies) private var dependencies
     @Bindable var match: BeloteMatch
-    let defaultGameMode: BeloteGameMode
     @State private var isShowingNewRound = false
     @State private var isShowingCardReference = false
     @State private var viewModel = MatchDetailViewModel()
@@ -158,22 +157,27 @@ struct MatchDetailView: View {
             }
         }
         .sheet(isPresented: $isShowingNewRound) {
-            NewRoundView(match: match, defaultGameMode: defaultGameMode) { round in
+            NewRoundView(match: match) { round in
                 match.rounds.append(round)
             }
         }
         .sheet(isPresented: $isShowingCardReference) {
-            CardReferenceView(defaultGameMode: defaultGameMode)
+            CardReferenceView(contract: currentTrump)
         }
         .sheet(isPresented: $isShowingQRCode) {
             MatchQRCodeView(match: match, joinLinkService: dependencies.joinLinkService)
         }
         .onAppear {
-            viewModel.configure(defaultGameMode: defaultGameMode, nextDealerSeat: match.nextDealerSeat)
+            viewModel.configure(nextDealerSeat: match.nextDealerSeat)
             cloudInviteCode = match.inviteCode
             restoreActiveRoundIfNeeded()
             refreshMatchState()
         }
+    }
+
+    /// Trump of the deal in progress: the chosen trump once taken, otherwise the turned card's suit.
+    private var currentTrump: BeloteSuit {
+        viewModel.completedDeal?.trump ?? viewModel.initialDeal?.proposedTrump ?? .hearts
     }
 
     private var addButtonPlacement: ToolbarItemPlacement {
@@ -268,7 +272,6 @@ struct MatchDetailView: View {
     private func startDeal() {
         viewModel.startDeal(
             nextDealerSeat: match.nextDealerSeat,
-            defaultGameMode: defaultGameMode,
             dealService: dependencies.dealService
         )
         refreshMatchState()

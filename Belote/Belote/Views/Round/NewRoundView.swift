@@ -11,7 +11,6 @@ struct NewRoundView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.beloteDependencies) private var dependencies
     let match: BeloteMatch
-    let defaultGameMode: BeloteGameMode
     let onCreate: (BeloteRound) -> Void
 
     @State private var teamAPoints = 82
@@ -24,13 +23,6 @@ struct NewRoundView: View {
     @State private var trumpSuit = BeloteSuit.hearts
     @State private var scoringError: String?
     @State private var note = ""
-
-    init(match: BeloteMatch, defaultGameMode: BeloteGameMode, onCreate: @escaping (BeloteRound) -> Void) {
-        self.match = match
-        self.defaultGameMode = defaultGameMode
-        self.onCreate = onCreate
-        _trumpSuit = State(initialValue: defaultGameMode.contract)
-    }
 
     var body: some View {
         NavigationStack {

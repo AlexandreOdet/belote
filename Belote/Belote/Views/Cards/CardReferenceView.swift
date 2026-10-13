@@ -16,8 +16,8 @@ struct CardReferenceView: View {
         GridItem(.adaptive(minimum: 68), spacing: 8)
     ]
 
-    init(defaultGameMode: BeloteGameMode) {
-        _selectedContract = State(initialValue: defaultGameMode.contract)
+    init(contract: BeloteSuit) {
+        _selectedContract = State(initialValue: contract)
     }
 
     var body: some View {

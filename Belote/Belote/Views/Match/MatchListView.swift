@@ -12,21 +12,11 @@ struct MatchListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \BeloteMatch.createdAt, order: .reverse) private var matches: [BeloteMatch]
     @Binding var selectedMatch: BeloteMatch?
-    @Binding var defaultBeloteContractRaw: String
     let onNewMatch: () -> Void
     let onJoinMatch: () -> Void
 
     var body: some View {
         List(selection: $selectedMatch) {
-            Section("Mode par defaut") {
-                Picker("Atout", selection: $defaultBeloteContractRaw) {
-                    ForEach(BeloteSuit.allCases) { suit in
-                        Label(suit.title, systemImage: suit.symbol)
-                            .tag(suit.rawValue)
-                    }
-                }
-            }
-
             Section("Parties") {
                 if matches.isEmpty {
                     Text("Aucune partie créée.")

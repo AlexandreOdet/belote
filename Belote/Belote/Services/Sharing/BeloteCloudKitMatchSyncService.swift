@@ -43,10 +43,14 @@ enum BeloteCloudKitMatchSyncError: Error, Equatable, LocalizedError {
 }
 
 struct CloudKitBeloteMatchSyncService: BeloteMatchSyncService {
-    private let database: any BeloteCloudRecordDatabase
+    private let databaseProvider: () -> any BeloteCloudRecordDatabase
 
-    init(database: any BeloteCloudRecordDatabase = CKContainer.default().publicCloudDatabase) {
-        self.database = database
+    init() {
+        databaseProvider = { CKContainer.default().publicCloudDatabase }
+    }
+
+    init(database: any BeloteCloudRecordDatabase) {
+        databaseProvider = { database }
     }
 
     @MainActor
@@ -56,7 +60,7 @@ struct CloudKitBeloteMatchSyncService: BeloteMatchSyncService {
         let record = CKRecord(recordType: BeloteCloudKitMatchRecord.recordType, recordID: recordID(for: snapshot.inviteCode))
 
         BeloteCloudKitMatchRecord.fill(record, with: snapshot, payload: payload)
-        let savedRecord = try await database.save(record)
+        let savedRecord = try await databaseProvider().save(record)
         return try BeloteCloudKitMatchRecord.reference(from: savedRecord)
     }
 
@@ -67,7 +71,7 @@ struct CloudKitBeloteMatchSyncService: BeloteMatchSyncService {
             throw BeloteCloudKitMatchSyncError.invalidInviteCode
         }
 
-        let record = try await database.record(for: recordID(for: normalizedInviteCode))
+        let record = try await databaseProvider().record(for: recordID(for: normalizedInviteCode))
         let payload = try BeloteCloudKitMatchRecord.payload(from: record)
         let snapshot = try sharingService.decodeSnapshot(from: payload)
         return try sharingService.makeMatch(from: snapshot)

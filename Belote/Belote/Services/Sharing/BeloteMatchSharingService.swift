@@ -32,7 +32,10 @@ struct StandardBeloteMatchSharingService: BeloteMatchSharingService {
 
     @MainActor
     func snapshot(for match: BeloteMatch) -> BeloteMatchSnapshot {
-        BeloteMatchSnapshot(match: match)
+        // ISO 8601 encoding keeps whole seconds only, so truncate the timestamp
+        // to make snapshots round-trip through JSON unchanged.
+        let now = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
+        return BeloteMatchSnapshot(match: match, updatedAt: now)
     }
 
     @MainActor
